@@ -1,0 +1,163 @@
+<!doctype html><html><head><meta charset="utf-8"><style>@font-face{font-family:K;font-weight:800;src:url(../vid/package/files/kanit-thai-800-normal.woff2)}html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:transparent}canvas{position:absolute;left:0;top:0}</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script></head><body>
+<script type="module">
+import * as THREE from 'three';
+import {SVGLoader} from 'three/addons/loaders/SVGLoader.js';
+const W=1080,H=1920;
+const R=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+R.setSize(W,H); R.setPixelRatio(1); R.setClearColor(0x0b1b2b,1); document.body.appendChild(R.domElement);
+const scene=new THREE.Scene(); scene.fog=new THREE.Fog(0x0b1b2b,1500,5200);
+const cam=new THREE.PerspectiveCamera(40,W/H,1,6000);
+scene.add(new THREE.AmbientLight(0x88aacc,1.6)); scene.add(new THREE.HemisphereLight(0x5ad1ff,0x020812,0.8));
+const dl=new THREE.DirectionalLight(0xffffff,1.4); dl.position.set(-400,900,800); scene.add(dl);
+const RED=['57','50','58','42','43','38','48'], ORG=['49','37','34'], GRN=['10','12','11','13','73','74'];
+const ORDER={'57':0,'50':1,'58':2,'42':3,'43':4,'38':5,'48':6,'49':0,'37':1,'34':2};
+const txt=await (await fetch('th_clean.svg')).text();
+const data=new SVGLoader().parse(txt);
+const map=new THREE.Group(); map.rotation.x=-Math.PI/2; scene.add(map);
+const provs=[];
+const cx=525, cy=925;
+for(const p of data.paths){
+  let n=p.userData.node, code=null;
+  while(n&&n.getAttribute){const c=n.getAttribute('class')||''; const m=c.match(/th-(\d+)/); if(m){code=m[1];break;} n=n.parentNode;}
+  if(!code) continue;
+  const shapes=SVGLoader.createShapes(p); if(!shapes.length) continue;
+  const geo=new THREE.ExtrudeGeometry(shapes,{depth:8,bevelEnabled:false});
+  geo.scale(1,-1,1); geo.translate(-cx,cy,0);
+  const z=RED.includes(code)?'r':ORG.includes(code)?'o':GRN.includes(code)?'g':'n';
+  const mat=new THREE.MeshStandardMaterial({color:0xffffff,emissive:0x000000,metalness:0.1,roughness:0.6,transparent:true,opacity:0});
+  const mesh=new THREE.Mesh(geo,mat); mesh.userData={code,z}; mesh.position.set(0,0,0); map.add(mesh); provs.push(mesh);
+  for(const sh of shapes){const pts=sh.getPoints(); const lg=new THREE.BufferGeometry().setFromPoints(pts.map(p=>new THREE.Vector3(p.x,p.y,8.2))); lg.scale(1,-1,1); lg.translate(-cx,cy,0);
+    mesh.add(new THREE.LineLoop(lg,new THREE.LineBasicMaterial({color:0xfff6d0,transparent:true,opacity:0.32})));}
+}
+// real satellite ground (NASA Blue Marble, bounds 97.2-106E, 5.4-20.7N == svg frame)
+const TL=new THREE.TextureLoader(); const satTex=await TL.loadAsync('sat/th_bmng_land.png'); satTex.colorSpace=THREE.SRGBColorSpace; satTex.anisotropy=8;
+const sat=new THREE.Mesh(new THREE.PlaneGeometry(1051.164,1849.133),new THREE.MeshBasicMaterial({map:satTex,transparent:true,depthWrite:false}));
+const ctxTex=await TL.loadAsync('sat/ctx_land.png'); ctxTex.colorSpace=THREE.SRGBColorSpace;
+const ctxP=new THREE.Mesh(new THREE.PlaneGeometry(24*119.45,26*120.85),new THREE.MeshBasicMaterial({map:ctxTex,transparent:true,depthWrite:false}));
+ctxP.rotation.x=-Math.PI/2; ctxP.position.set(48.4,-2,5.6); scene.add(ctxP); ctxP.renderOrder=-2; 
+// realistic ocean
+const waterMat=new THREE.ShaderMaterial({uniforms:{uTime:{value:0},uSun:{value:new THREE.Vector3(-0.4,0.75,-0.5).normalize()},uFog:{value:new THREE.Color(0x0b1b2b)}},
+ vertexShader:`varying vec3 vW; void main(){vec4 w=modelMatrix*vec4(position,1.); vW=w.xyz; gl_Position=projectionMatrix*viewMatrix*w;}`,
+ fragmentShader:`uniform float uTime; uniform vec3 uSun; uniform vec3 uFog; varying vec3 vW;
+ float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);} 
+ float noise(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),u.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),u.x),u.y);}
+ float H(vec2 p){float h=0.,a=1.,f=0.045; for(int i=0;i<5;i++){h+=a*noise(p*f+vec2(uTime*0.35*f*20.,uTime*0.22*f*20.)); a*=0.5; f*=2.1;} return h;}
+ void main(){ vec2 p=vW.xz; float e=1.2; float hx=H(p+vec2(e,0))-H(p-vec2(e,0)); float hz=H(p+vec2(0,e))-H(p-vec2(0,e));
+  vec3 N=normalize(vec3(-hx*2.2,1.,-hz*2.2)); vec3 V=normalize(cameraPosition-vW);
+  float fr=0.04+0.96*pow(1.-max(dot(N,V),0.),5.);
+  vec3 deep=vec3(0.012,0.07,0.13), sky=mix(vec3(0.18,0.32,0.48),vec3(0.55,0.70,0.85),clamp(N.y,0.,1.));
+  vec3 R=reflect(-uSun,N); float sp=pow(max(dot(R,V),0.),400.)*0.9 + pow(max(dot(R,V),0.),24.)*0.08;
+  vec3 col=mix(deep,sky,fr*0.8)+vec3(1.,0.95,0.85)*sp;
+  float d=length(cameraPosition-vW); float fg=smoothstep(1400.,5200.,d); col=mix(col,uFog,fg);
+  gl_FragColor=vec4(col,1.); }`});
+const water=new THREE.Mesh(new THREE.PlaneGeometry(12000,12000,1,1),waterMat); water.rotation.x=-Math.PI/2; water.position.y=-4; scene.add(water);
+sat.rotation.x=-Math.PI/2; sat.position.set(1051.164/2-cx,-1,-(cy-1849.133/2)); scene.add(sat); sat.renderOrder=-1;
+// holographic grid floor
+const grid=new THREE.GridHelper(4000,80,0x1a5f9e,0x0c2d4a); grid.position.y=-2; grid.material.transparent=true; grid.material.opacity=0.0; grid.visible=false;
+// glow pillar texture
+const cv=document.createElement('canvas'); cv.width=64; cv.height=256; const g=cv.getContext('2d');
+const gr=g.createLinearGradient(0,256,0,0); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,256);
+const ptex=new THREE.CanvasTexture(cv);
+const pillars={};
+function centroid(m){m.geometry.computeBoundingBox(); const b=m.geometry.boundingBox; return new THREE.Vector3((b.min.x+b.max.x)/2,(b.min.y+b.max.y)/2,0);}
+for(const m of provs){ if(m.userData.z==='n') continue; const c=centroid(m);
+  const col=m.userData.z==='r'?0xff2a1a:m.userData.z==='o'?0xff9f0a:0x30d158;
+  const pl=new THREE.Mesh(new THREE.CylinderGeometry(5,9,1,20,1,true),new THREE.MeshBasicMaterial({map:ptex,color:col,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
+  pl.position.set(c.x,0,-c.y); scene.add(pl); pillars[m.uuid]=pl; m.userData.c=c; }
+// river flow particles (Mekong + Kok + Salween approximations in SVG coords)
+
+const byCode={}; for(const m of provs){ m.geometry.computeBoundingBox(); (byCode[m.userData.code]=byCode[m.userData.code]||[]).push(m.geometry.boundingBox); }
+const bb=c=>{const a=byCode[c]; const b=a[0].clone(); a.forEach(x=>b.union(x)); return b;};
+const V=(x,y)=>new THREE.Vector3(x,8,-y);   // map plane: x right, y north -> scene -z
+const cr=bb('57'),cm=bb('50'),mh=bb('58'),lo=bb('42'),nk=bb('43'),bk=bb('38'),np=bb('48'),mk=bb('49'),ac=bb('37'),ub=bb('34');
+const mid=(a,b)=>(a+b)/2;
+const mekong=[V(cr.max.x-10,cr.max.y),V(cr.max.x+30,mid(cr.min.y,cr.max.y)),V(lo.min.x+40,lo.max.y+10),V(mid(lo.min.x,lo.max.x),lo.max.y),V(mid(nk.min.x,nk.max.x),nk.max.y),V(mid(bk.min.x,bk.max.x),bk.max.y),V(bk.max.x,mid(bk.min.y,bk.max.y)),V(np.max.x,mid(np.min.y,np.max.y)),V(mk.max.x,mid(mk.min.y,mk.max.y)),V(ac.max.x+5,mid(ac.min.y,ac.max.y)),V(ub.max.x,mid(ub.min.y,ub.max.y)),V(ub.max.x+60,ub.min.y-40)];
+const kok=[V(cm.min.x+mid(0,cm.max.x-cm.min.x)*0.6,cm.max.y-10),V(mid(cr.min.x,cr.max.x)-20,mid(cr.min.y,cr.max.y)),V(cr.max.x-10,cr.max.y)];
+const salween=[V(mh.min.x-5,mh.max.y),V(mh.min.x+5,mid(mh.min.y,mh.max.y)),V(mh.min.x,mh.min.y)];
+const curves=[mekong,kok,salween].map(r=>new THREE.CatmullRomCurve3(r));
+// glowing river tubes
+for(const c of []){const tm=new THREE.Mesh(new THREE.TubeGeometry(c,200,3,8,false),new THREE.MeshBasicMaterial({color:0x5ad1ff,transparent:true,opacity:0.35,blending:THREE.AdditiveBlending,depthWrite:false})); scene.add(tm);}
+const NP=900; const pg=new THREE.BufferGeometry(); const pos=new Float32Array(NP*3); pg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+const dot=document.createElement('canvas'); dot.width=dot.height=64; const d2=dot.getContext('2d'); const rg=d2.createRadialGradient(32,32,0,32,32,32); rg.addColorStop(0,'rgba(255,255,255,1)'); rg.addColorStop(0.3,'rgba(255,90,60,0.9)'); rg.addColorStop(1,'rgba(255,0,0,0)'); d2.fillStyle=rg; d2.fillRect(0,0,64,64);
+const pts=new THREE.Points(pg,new THREE.PointsMaterial({size:16,map:new THREE.CanvasTexture(dot),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,color:0xff4030})); scene.add(pts);
+const seeds=[...Array(NP)].map((_,i)=>[i%5<3?0:(i%5===3?1:2),Math.random(),(Math.random()-.5)*14,(Math.random()-.5)*14,0.6+Math.random()*0.8]);
+// scan ring
+const ring=new THREE.Mesh(new THREE.RingGeometry(0.96,1,128),new THREE.MeshBasicMaterial({color:0x5ad1ff,transparent:true,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,depthWrite:false}));
+ring.rotation.x=-Math.PI/2; ring.position.y=3; scene.add(ring);
+const lerp=(a,b,k)=>a+(b-a)*k, ease=k=>k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2, cl=x=>Math.max(0,Math.min(1,x));
+// camera keyframes per stage: [camX,camY,camZ, lookX,lookZ]
+const CAM={full:[-40,1750,1250,-40,-80],north:[-340,800,-330,-340,-900],isan:[230,800,-180,230,-700],watch:[380,800,200,380,-340],central:[-150,680,520,-150,60],south:[520,560,440,560,40],all:[-30,1850,1350,-30,-80]};
+
+// starfield
+{const sg=new THREE.BufferGeometry(),sp=new Float32Array(1500*3);for(let i=0;i<1500;i++){sp[i*3]=(Math.random()-.5)*6000;sp[i*3+1]=-200-Math.random()*600;sp[i*3+2]=(Math.random()-.5)*6000;}sg.setAttribute('position',new THREE.BufferAttribute(sp,3));
+ }
+// As atom (used in 'atom' stage)
+const atom=new THREE.Group(); atom.visible=false; scene.add(atom);
+const nuc=new THREE.Mesh(new THREE.SphereGeometry(60,48,48),new THREE.MeshStandardMaterial({color:0xff3b30,emissive:0xaa1100,emissiveIntensity:1.2,metalness:0.4,roughness:0.3})); atom.add(nuc);
+const halo=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(dot),color:0xff5040,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false})); halo.scale.set(300,300,1); atom.add(halo);
+const orbits=[];for(let i=0;i<3;i++){const o=new THREE.Group();o.rotation.set(i*1.05,i*0.7,0);const rg=new THREE.Mesh(new THREE.TorusGeometry(180+i*40,1.6,8,160),new THREE.MeshBasicMaterial({color:0xffb199,transparent:true,opacity:0.7,blending:THREE.AdditiveBlending}));o.add(rg);
+ const el=new THREE.Mesh(new THREE.SphereGeometry(12,20,20),new THREE.MeshBasicMaterial({color:0xffffff}));el.position.x=180+i*40;o.add(el);const eh=halo.clone();eh.scale.set(90,90,1);el.add(eh);atom.add(o);orbits.push(o);}
+const earthTex=await TL.loadAsync('sat/earth.jpg'); earthTex.colorSpace=THREE.SRGBColorSpace;
+const globe=new THREE.Group(); globe.visible=false; globe.position.set(0,-6000,0); scene.add(globe);
+const GR=500; const earth=new THREE.Mesh(new THREE.SphereGeometry(GR,96,96),new THREE.MeshStandardMaterial({map:earthTex,roughness:1,metalness:0})); globe.add(earth);
+const atm=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture((()=>{const c=document.createElement('canvas');c.width=c.height=256;const x=c.getContext('2d');const r=x.createRadialGradient(128,128,90,128,128,128);r.addColorStop(0,'rgba(80,160,255,0)');r.addColorStop(0.72,'rgba(80,160,255,0.0)');r.addColorStop(0.8,'rgba(110,190,255,0.85)');r.addColorStop(1,'rgba(80,160,255,0)');x.fillStyle=r;x.fillRect(0,0,256,256);return c;})()),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+atm.scale.set(GR*2.95,GR*2.95,1); globe.add(atm);
+const gl=new THREE.DirectionalLight(0xffffff,2.2); gl.position.set(-2000,-5200,2500); scene.add(gl); gl.target=globe;
+const dirOf=(lat,lon)=>{const ph=(lon+180)/360*2*Math.PI, la=lat*Math.PI/180; return new THREE.Vector3(-Math.cos(ph)*Math.cos(la),Math.sin(la),Math.sin(ph)*Math.cos(la));};
+const pin=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(dot),color:0xff3020,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false})); globe.add(pin);
+
+const TH={'57':'เชียงราย','50':'เชียงใหม่','58':'แม่ฮ่องสอน','42':'เลย','43':'หนองคาย','38':'บึงกาฬ','48':'นครพนม','49':'มุกดาหาร','37':'อำนาจเจริญ','34':'อุบลราชธานี','10':'กรุงเทพฯ'};
+await document.fonts.load('800 60px K');
+const labels={};
+for(const m of provs){const nm=TH[m.userData.code]; if(!nm||labels[m.userData.code]) continue;
+  const cv=document.createElement('canvas'); cv.width=512; cv.height=128; const x=cv.getContext('2d');
+  x.font='800 64px K'; const w=x.measureText(nm).width+56; const z=m.userData.z; const col=z==='r'?'#ff3b30':z==='o'?'#ff9f0a':'#30d158';
+  x.fillStyle='rgba(0,0,0,0.72)'; x.beginPath(); x.roundRect((512-w)/2,14,w,100,26); x.fill(); x.strokeStyle=col; x.lineWidth=7; x.stroke();
+  x.fillStyle='#fff'; x.textAlign='center'; x.textBaseline='middle'; x.fillText(nm,256,66);
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthTest:false})); sp.renderOrder=10;
+  const c=m.userData.c||centroid(m); sp.position.set(c.x,70,-c.y); sp.scale.set(170,42.5,1); sp.visible=false; scene.add(sp); labels[m.userData.code]={sp,m};}
+window.cg=function(t,stage,u,D,prev){ if(stage==='atomdark') stage='atom';
+  Object.values(labels).forEach(l=>{l.sp.visible=false;});
+  if(stage==='globe'){ globe.visible=true; atom.visible=false; water.visible=false; ctxP.visible=false; sat.visible=false; map.visible=false; pts.visible=false; ring.visible=false; Object.values(pillars).forEach(p=>p.visible=false); scene.children.forEach(c=>{if(c.isMesh&&c.geometry.type==='TubeGeometry')c.visible=false;});
+    const k=ease(cl(u/D)); const th=dirOf(16,101);
+    const start=dirOf(10,40+0*t); const d=start.clone().lerp(th,ease(cl(u/(D*0.6)))).normalize();
+    const dist=lerp(2300,760,k); cam.position.copy(globe.position).add(d.clone().multiplyScalar(dist)); cam.up.set(0,1,0); cam.lookAt(globe.position.clone().add(th.clone().multiplyScalar(GR*k*0.9)));
+    earth.rotation.y=0; pin.position.copy(th.clone().multiplyScalar(GR+4)); pin.scale.setScalar(26+12*Math.sin(t*8)); pin.material.opacity=cl((u-D*0.5)/0.3);
+    scene.fog.far=99999; R.render(scene,cam); scene.fog.far=5200; return; }
+  globe.visible=false;
+  if(stage==='atom'){ map.visible=false; grid.visible=false; water.visible=false; ctxP.visible=false; sat.visible=false; pts.visible=false; ring.visible=false; atom.visible=true;
+    Object.values(pillars).forEach(p=>p.visible=false); scene.children.forEach(c=>{if(c.isMesh&&c.geometry.type==='TubeGeometry')c.visible=false;});
+    cam.position.set(Math.sin(t*0.5)*160,90,980); cam.lookAt(0,0,0); const s=ease(cl(u/0.6)); atom.scale.setScalar(0.2+0.8*s);
+    orbits.forEach((o,i)=>{o.rotation.z=t*(1.4+i*0.5); o.rotation.y=i*0.7+t*0.2;}); nuc.rotation.y=t; halo.material.opacity=0.6+0.3*Math.sin(t*5);
+    R.render(scene,cam); return; }
+  map.visible=true; grid.visible=false; water.visible=true; ctxP.visible=true; sat.visible=true; waterMat.uniforms.uTime.value=t; pts.visible=true; ring.visible=true; atom.visible=false;
+  scene.children.forEach(c=>{if(c.isMesh&&c.geometry.type==='TubeGeometry')c.visible=true;});
+
+  const k=ease(cl(u/1.2)); const a=CAM[prev||stage], b=CAM[stage];
+  const c=[0,1,2,3,4].map(i=>lerp(a[i],b[i],k));
+  const drift=Math.sin(t*0.4)*30;
+  cam.position.set(c[0]+drift,c[1],c[2]); cam.lookAt(c[3],0,c[4]);
+  const showR=['north','isan','watch','south','central','all'].includes(stage), showO=['watch','south','central','all'].includes(stage), showG=['central','all'].includes(stage);
+  for(const m of provs){ const z=m.userData.z; let on=(z==='r'&&showR)||(z==='o'&&showO)||(z==='g'&&showG);
+    if(stage==='north'&&z==='r'&&!['57','50','58'].includes(m.userData.code)) on=false;
+    const delay=(ORDER[m.userData.code]||0)*0.18; const e=on?ease(cl((u-0.3-delay)/0.6)):0;
+    const col=z==='r'?new THREE.Color(0xff2a1a):z==='o'?new THREE.Color(0xff9f0a):new THREE.Color(0x30d158);
+    const ee=on?(prev===stage?1:e):0;
+    m.material.color.copy(col); m.material.opacity=ee*0.62; m.material.emissive.copy(col).multiplyScalar(ee*(0.25+0.12*Math.sin(t*6)));
+    m.scale.z=1+ee*4; m.position.z=0;
+    const pl=pillars[m.uuid]; if(pl){pl.visible=ee>0.01; pl.scale.set(1,1+ee*320,1); pl.position.y=ee*160+40; pl.material.opacity=ee*0.55;}
+  }
+  const near=['north','isan','watch','south','central'].includes(stage);
+  for(const [code,l] of Object.entries(labels)){ const m=l.m; const on=near && m.material.opacity>0.3 && !(stage==='central'&&m.userData.z!=='g') && !(stage!=='central'&&m.userData.z==='g');
+    l.sp.visible=on; if(on){ const k=Math.min(1,(m.material.opacity-0.3)/0.3); l.sp.material.opacity=k; l.sp.position.y=60+m.scale.z*8; } }
+  // particles flow
+  const flowOn=stage!=='full';
+  for(let i=0;i<NP;i++){const [ri,ph,ox,oz,sp]=seeds[i]; const f=(ph+t*0.08*sp)%1; const p=curves[ri].getPointAt(f);
+    pos[i*3]=p.x+ox; pos[i*3+1]=flowOn?10:-999; pos[i*3+2]=p.z+oz;}
+  pg.attributes.position.needsUpdate=true;
+  const rr=((t*0.6)%1); ring.scale.setScalar(50+rr*1400); ring.material.opacity=(1-rr)*0.18;
+  R.render(scene,cam);
+};
+window.cgReady=true;
+</script></body></html>

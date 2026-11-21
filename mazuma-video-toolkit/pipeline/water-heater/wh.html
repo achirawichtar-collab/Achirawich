@@ -1,0 +1,133 @@
+<!doctype html><html lang="th"><head><meta charset="utf-8"><script src="timeline.js"></script>
+<style>
+@font-face{font-family:K;font-weight:600;src:url(../vid/package/files/kanit-thai-600-normal.woff2)}
+@font-face{font-family:K;font-weight:600;src:url(../vid/package/files/kanit-latin-600-normal.woff2)}
+@font-face{font-family:K;font-weight:800;src:url(../vid/package/files/kanit-thai-800-normal.woff2)}
+@font-face{font-family:K;font-weight:800;src:url(../vid/package/files/kanit-latin-800-normal.woff2)}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:1080px;height:1920px;overflow:hidden;background:transparent;font-family:K,sans-serif}
+#veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,8,20,.6) 0%,rgba(0,8,20,0) 30%,rgba(0,8,20,0) 62%,rgba(0,8,20,.55) 100%)}
+.shot{position:absolute;inset:0;display:none}
+.tint{position:absolute;inset:0}
+.ttl{position:absolute;left:40px;right:40px;top:250px;text-align:center;color:#fff;font-weight:800;font-size:112px;line-height:1.12;
+ text-shadow:0 6px 0 rgba(0,0,0,.35),0 0 40px rgba(0,0,0,.45);-webkit-text-stroke:3px rgba(0,0,0,.25)}
+.ttl b{color:#ffd23f}
+.ttl.sm{font-size:96px}
+.prods{position:absolute;left:0;right:0;top:600px;height:720px;display:flex;align-items:flex-end;justify-content:center;gap:10px}
+.prods img{max-height:740px;max-width:900px;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55)) drop-shadow(0 0 60px rgba(120,200,255,.35))}
+.prods.n3 img{max-height:520px;max-width:330px}
+.chips{position:absolute;left:30px;right:30px;top:1345px;display:flex;justify-content:center;gap:18px;flex-wrap:wrap}
+.chip{background:#fff;color:#0b1626;font-weight:800;font-size:46px;padding:8px 30px;border-radius:40px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.cap{position:absolute;left:60px;right:60px;top:1470px;text-align:center;color:#fff;font-weight:600;font-size:52px;
+ text-shadow:0 0 8px #000,0 3px 4px #000;-webkit-text-stroke:1.5px rgba(0,0,0,.6)}
+.cred{position:absolute;left:36px;top:1610px;background:rgba(0,0,0,.55);color:#fff;font-weight:600;font-size:26px;padding:6px 16px;border-radius:12px}
+.brand{position:absolute;right:36px;top:200px;color:#fff;font-weight:800;font-size:34px;letter-spacing:4px;opacity:.85}
+#flash{position:absolute;inset:0;background:#fff;opacity:0}
+.cards{position:absolute;left:60px;right:60px;top:820px;display:flex;flex-direction:column;gap:34px;align-items:center}
+.card{background:rgba(255,255,255,.95);color:#0b1626;font-weight:800;font-size:70px;padding:20px 50px;border-radius:30px;width:720px;box-shadow:0 14px 40px rgba(0,0,0,.4)}
+.card i{font-style:normal;display:inline-flex;width:90px;height:90px;border-radius:50%;background:#1766d1;color:#fff;align-items:center;justify-content:center;margin-right:24px}
+.big{position:absolute;left:0;right:0;top:760px;text-align:center;color:#ffd23f;font-weight:800;font-size:230px;text-shadow:0 10px 0 rgba(0,0,0,.35),0 0 60px rgba(255,180,0,.5)}
+.stamp{position:absolute;left:50%;top:1000px;width:400px;height:400px;margin-left:-200px;border:22px solid #e8302a;border-radius:50%;color:#e8302a;font-weight:800;font-size:130px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.88)}
+.arrow{position:absolute;left:50%;top:1050px;margin-left:-110px;font-size:220px}
+.bubble{position:absolute;left:120px;right:120px;top:960px;background:#fff;border-radius:40px;padding:34px 44px;font-size:56px;font-weight:600;color:#0b1626;box-shadow:0 20px 50px rgba(0,0,0,.4)}
+.bubble:after{content:'';position:absolute;left:80px;bottom:-40px;border:24px solid transparent;border-top:30px solid #fff}
+.ring{position:absolute;left:50%;top:700px;width:760px;height:760px;margin-left:-380px;border-radius:50%}
+.cols{position:absolute;left:30px;right:30px;top:640px;display:flex;justify-content:space-between;align-items:flex-end}
+.col{width:320px;text-align:center;border-radius:28px;padding:20px 0 16px;transition:none}
+.col img{max-height:470px;max-width:290px;filter:drop-shadow(0 20px 30px rgba(0,0,0,.5))}
+.col div{color:#fff;font-weight:800;font-size:46px;margin-top:10px}
+.meter{position:absolute;left:50%;top:640px;width:560px;height:700px;margin-left:-280px;border-radius:40px;background:linear-gradient(160deg,#f4f6f8,#c9d0d8);box-shadow:0 30px 60px rgba(0,0,0,.6),inset 0 0 0 10px #9aa4ae;padding:60px 50px;text-align:center;color:#1b2430}
+.mw{display:flex;justify-content:center;gap:8px;background:#11161c;padding:14px;border-radius:12px}
+.mw span{width:70px;height:96px;background:#fff;color:#111;font-weight:800;font-size:70px;line-height:96px;border-radius:6px}
+.mw span.r{background:#d22;color:#fff}
+.disc{margin:40px auto 0;width:400px;height:40px;border-radius:20px;background:#2a3038;position:relative;overflow:hidden}
+.disc i{position:absolute;top:0;width:40px;height:40px;background:#e33}
+.ml{margin-top:40px;font-weight:600;font-size:40px}
+.mamp{margin:30px auto 0;display:inline-block;font-weight:800;font-size:110px;color:#c00;padding:0 30px;border:10px solid #e8302a;border-radius:30px}
+</style></head><body><div id="veil"></div><div id="root"></div><div class="brand">MAZUMA</div><div id="flash"></div>
+<script>
+const P=n=>`<img src="prod/${n}_cut.png">`;
+const MZ='ภาพสินค้า: Mazuma';
+const R=(c1,c2)=>`radial-gradient(ellipse at 50% 55%,${c1} 0%,${c2} 75%)`;
+// [title, credit, opts]
+const DEF=[
+ ['🛑 <span style="color:#ff4b3a">อย่าเพิ่งซื้อ!</span><br>เครื่องทำน้ำอุ่น','Pexels 9166291',{shake:1}],
+ ['ถ้าเลือกผิด = <b>🥶</b>','Pexels 6658288'],
+ ['❌ <b>น้ำไม่อุ่น</b>','Pexels 5980103'],
+ ['❌ <b>ไฟตก</b>','Pexels 853772'],
+ ['❌ <b>ไม่ปลอดภัย</b> ⚡','Pexels 9665450'],
+ ['ดูแค่ <b>3 ข้อ</b> พอ','Pexels 35495443',{html:'<div class="cards"><div class="card a"><i>1</i>วัตต์</div><div class="card a"><i>2</i>ความปลอดภัย</div><div class="card a"><i>3</i>ฝักบัว</div></div>'}],
+ ['① <b>วัตต์</b> (W)','Pexels 28886877',{html:'<div class="big" id="cnt">3500W</div>'}],
+ ['<b>3500W</b><br>= 👤 คนเดียว','Pexels 19919757'],
+ ['<b>4500W</b><br>= 👨‍👩‍👧 หลายคน','Pexels 10565899'],
+ ['② <b>ปลอดภัย</b> 🛡️','Pexels: Nikita Nikitin'],
+ ['ต้องมี <b>มอก.</b> ✅','Pexels 35152432',{html:'<div class="stamp a">มอก.</div>'}],
+ ['⚡ <b>ELCB</b><br>ตัดไฟเมื่อไฟรั่ว','Pexels 11503031',{black:0.75}],
+ ['🔌 เช็กสายดิน<br>= <b>อุ่นใจ</b>','Pexels 8955853'],
+ ['③ <b>ฝักบัว</b>','Pexels 36188238'],
+ ['🌧️ Rain Shower<br>→ <b>4500W+</b>','Pexels 9166285'],
+ ['ไม่งั้น… <b>🥶</b>','Pexels 9166284'],
+ ['3 รุ่นที่<br><b>คนถามเยอะ</b>','Mixkit · '+MZ,{prods:['fenix','miracle_blue','extreme'],n3:1}],
+ ['<b>FENIX</b> 4.5',MZ,{prods:['fenix'],chips:['4500W','หม้อทองแดง','ELCB'],tint:R('rgba(30,110,180,.55)','rgba(5,15,30,.85)')}],
+ ['งบไม่เยอะ<br><b>ELCB ครบ</b>',MZ,{prods:['fenix'],chips:['4500W','หม้อทองแดง','ELCB'],tint:R('rgba(30,110,180,.55)','rgba(5,15,30,.85)'),zoom:1}],
+ ['<b>MIRACLE</b><br>เช็กสายดิน',MZ,{cycle:['miracle_silver','miracle_blue','miracle_black'],chips:['iSAFE','ELCB'],tint:R('rgba(20,140,190,.5)','rgba(4,16,30,.85)')}],
+ ['เลือกได้<br><b>3500/4500/5500</b>',MZ,{prods:['miracle_silver','miracle_blue','miracle_black'],n3:1,chips:['3500W','4500W','5500W'],tint:R('rgba(20,90,150,.5)','rgba(4,14,26,.85)'),sm:1}],
+ ['มีรุ่น<br><b>Rain Shower</b> 🌧️',MZ,{prods:['miracle_rain'],chips:['Rain Shower','iSAFE','ELCB'],tint:R('rgba(60,90,120,.5)','rgba(5,10,18,.88)')}],
+ ['<b>EXTREME</b><br>จัดเต็มปลอดภัย',MZ,{prods:['extreme'],chips:['ELCB 2 ชั้น','iSAFE','IP25'],tint:R('rgba(170,40,30,.5)','rgba(18,5,5,.88)'),glow:'rgba(255,90,60,.6)'}],
+ ['ELCB <b>2 ชั้น</b><br>⏱️ ตัดเองถ้าเปิดนาน',MZ,{prods:['extreme'],chips:['ตัดไฟเองเกิน 40 นาที'],tint:R('rgba(150,30,30,.5)','rgba(18,5,5,.88)'),ring:1,sm:1}],
+ ['งบประหยัด<br>→ <b>FENIX</b>',MZ,{cols:0}],
+ ['เลือกวัตต์ได้<br>→ <b>MIRACLE</b>',MZ,{cols:1}],
+ ['ปลอดภัยสุด<br>→ <b>EXTREME</b>',MZ,{cols:2}],
+ ['🛒 กด<b>ตะกร้า</b><br>ด้านล่าง','Pexels 6898061',{html:'<div class="arrow">👇</div>'}],
+ ['💬 ไม่แน่ใจ?<br><b>คอมเมนต์ถาม</b>','Pexels 7822029',{html:'<div class="bubble a">รุ่นไหนเหมาะกับบ้านผม? 🤔</div>'}],
+];
+const COLS=[['fenix','FENIX'],['miracle_black','MIRACLE'],['extreme','EXTREME']];
+const root=document.getElementById('root');
+DEF.forEach(([ttl,cred,o={}],i)=>{
+  let h=`<div class="shot" id="s${i}">`;
+  if(o.tint) h+=`<div class="tint" style="background:${o.tint}"></div>`;
+  if(o.cols!==undefined) h+=`<div class="tint" style="background:rgba(6,14,26,.82)"></div><div class="cols">`+COLS.map(([p,n],j)=>`<div class="col" data-j="${j}">${P(p)}<div>${n}</div></div>`).join('')+`</div>`;
+  if(o.ring) h+=`<div class="ring"></div>`;
+  h+=`<div class="ttl${o.sm?' sm':''}">${ttl}</div>`;
+  if(o.prods) h+=`<div class="prods${o.n3?' n3':''}">${o.prods.map(P).join('')}</div>`;
+  if(o.cycle) h+=`<div class="prods cyc">${o.cycle.map(P).join('')}</div>`;
+  if(o.chips) h+=`<div class="chips">${o.chips.map(c=>`<div class="chip">${c}</div>`).join('')}</div>`;
+  if(o.html) h+=o.html;
+  if(o.black) h+=`<div class="blk" style="position:absolute;inset:0;background:#000;opacity:0"></div>`;
+  h+=`<div class="cap">${TL.S[i].cap}</div><div class="cred">${cred}</div></div>`;
+  root.insertAdjacentHTML('beforeend',h);
+});
+const cl=x=>Math.max(0,Math.min(1,x));
+const back=x=>{x=cl(x);const c=1.9;return 1+(c+1)*Math.pow(x-1,3)+c*Math.pow(x-1,2)};
+const out=x=>1-Math.pow(1-cl(x),3);
+window.frame=function(t){
+  let i=TL.S.findIndex(s=>t>=s.a&&t<s.b); if(i<0) i=TL.S.length-1;
+  const s=TL.S[i], u=t-s.a, D=s.b-s.a, o=DEF[i][2]||{};
+  document.querySelectorAll('.shot').forEach((e,k)=>e.style.display=k===i?'block':'none');
+  const el=document.getElementById('s'+i), q=c=>[...el.querySelectorAll(c)];
+  document.getElementById('flash').style.opacity=0;
+  const tt=el.querySelector('.ttl'); const k=back(u/0.28);
+  let sh=o.shake?`translate(${Math.sin(t*70)*12}px,${Math.cos(t*55)*8}px)`:'';
+  tt.style.transform=`${sh} scale(${1.5-0.5*k})`; tt.style.opacity=cl(u/0.1);
+  q('.prods img').forEach((im,j)=>{const p=back((u-0.08-j*0.1)/0.35);
+    im.style.transform=`translateY(${(1-p)*160+Math.sin(t*2.2+j)*8}px) scale(${(0.7+0.3*p)*(o.zoom?1+0.06*u:1)})`; im.style.opacity=cl((u-0.08-j*0.1)/0.12);
+    if(o.glow) im.style.filter=`drop-shadow(0 30px 40px rgba(0,0,0,.55)) drop-shadow(0 0 ${50+30*Math.sin(t*6)}px ${o.glow})`;});
+  if(o.cycle){const c=Math.floor(u/0.42)%3; q('.cyc img').forEach((im,j)=>{im.style.display=j===c?'block':'none';});}
+  q('.chip').forEach((c,j)=>{const p=back((u-0.3-j*0.12)/0.25); c.style.transform=`scale(${p})`; c.style.opacity=cl((u-0.3-j*0.12)/0.08);});
+  q('.cap').forEach(c=>c.style.opacity=cl((u-0.05)/0.1));
+  q('.card').forEach((c,j)=>{const p=back((u-0.25-j*0.27)/0.25); c.style.transform=`translateX(${(1-p)*-700}px)`; c.style.opacity=cl((u-0.25-j*0.27)/0.1);});
+  const cnt=el.querySelector('#cnt'); if(cnt){const v=3500+Math.round(cl((u-0.2)/0.7)*10)*100; cnt.textContent=v+'W'; cnt.style.transform=`scale(${back(u/0.3)})`;}
+  q('.stamp').forEach(c=>{const p=cl((u-0.35)/0.12); c.style.transform=`rotate(-14deg) scale(${2.6-1.6*p})`; c.style.opacity=p;});
+  q('.blk').forEach(c=>c.style.opacity=(u>o.black&&u<o.black+0.12)?1:0);
+  q('.meter').forEach(c=>{const p=back((u-0.1)/0.3);c.style.transform=`scale(${p})`;c.style.opacity=cl(u/0.1);});
+  q('.disc i').forEach(c=>c.style.left=((t*500)%440-40)+'px');
+  q('.mamp').forEach(c=>c.style.boxShadow=`0 0 ${30+30*Math.sin(t*10)}px rgba(255,40,40,.8)`);
+  q('.arrow').forEach(c=>c.style.transform=`translateY(${Math.abs(Math.sin(t*6))*70}px)`);
+  q('.bubble').forEach(c=>{const p=back((u-0.3)/0.3); c.style.transform=`scale(${p})`; c.style.opacity=cl((u-0.3)/0.1);});
+  q('.ring').forEach(c=>{const a=cl(u/(D*0.9))*360; c.style.background=`conic-gradient(rgba(255,210,63,.85) ${a}deg, rgba(255,255,255,.12) ${a}deg)`;
+    c.style.webkitMask='radial-gradient(circle, transparent 62%, #000 63%)';});
+  q('.col').forEach(c=>{const j=+c.dataset.j, on=j===o.cols, p=out(u/0.25);
+    c.style.opacity=on?1:0.35; c.style.transform=`scale(${on?1+0.12*p:0.92})`;
+    c.style.background=on?`rgba(255,210,63,${0.35*p})`:'transparent'; c.style.boxShadow=on?`0 0 ${50*p}px rgba(255,210,63,.6)`:'none';});
+};
+</script></body></html>

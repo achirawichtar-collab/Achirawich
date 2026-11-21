@@ -1,0 +1,21 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1080px;height:1920px;background:#07111d;overflow:hidden}
+#m svg{background:#07111d}
+#m{position:absolute;left:40px;top:120px;width:1000px;height:1760px}
+#m svg{width:100%;height:100%}
+[fill='#E0E0E0'],[style*='fill:#e0e0e0']{fill:#13202f!important;stroke:#0a1320}
+[fill='#C6ECFF']{fill:#07111d!important}
+[fill='#FEFEE9']{fill:#24405e}
+.landxx,.islandxx,.landxx *,.islandxx *{fill:#24405e;stroke:#0b1626;stroke-width:1.2}
+.riverxx,.riverxx *{fill:none!important}
+.red,.red *{fill:#ff3b30!important}.red{filter:drop-shadow(0 0 12px #ff3b30)}
+.org,.org *{fill:#ff9f0a!important}
+.grn,.grn *{fill:#30d158!important}
+.riverxx{fill:none}
+</style></head><body><div id="m"></div><script>
+fetch('th_clean.svg').then(r=>r.text()).then(t=>{document.getElementById('m').innerHTML=t;
+ const p=new URLSearchParams(location.search);
+ for(const [cls,codes] of [['red',p.get('r')],['org',p.get('o')],['grn',p.get('g')]]) if(codes) codes.split(',').forEach(c=>document.querySelectorAll('.th-'+c).forEach(e=>e.classList.add(cls)));
+ const z=p.get('z'); if(z){const [s,x,y]=z.split(',');document.getElementById('m').style.transform=`scale(${s})`;document.getElementById('m').style.transformOrigin=`${x}% ${y}%`;}
+ document.title='ok';});
+</script></body></html>
